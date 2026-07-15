@@ -27,6 +27,10 @@ const getInputById = (id) => inputRules.get(id);
 
 const isAProperty = (property) => property?.startsWith("--");
 
+export const removeAllCache = () => {
+    cached.clear()
+}
+
 const isResourceCached = (url, id) => {
   const resource = cached.get(url);
 

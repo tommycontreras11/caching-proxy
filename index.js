@@ -1,4 +1,4 @@
-import { inputValidations, initServer } from "./helper.js"
+import { inputValidations, initServer, removeAllCache } from "./helper.js"
 
 process.stdin.on("data", (data) => {
     const input = data.toString().trim().split(" ")
@@ -8,6 +8,12 @@ process.stdin.on("data", (data) => {
 
     switch(command) {
         case "caching-proxy":
+            const isArgumentToCleanCache = arg?.includes("--clear-cache")
+            if(isArgumentToCleanCache) {
+                removeAllCache()
+                return
+            }
+
             const hasError = inputValidations(arg)
             if(hasError) return 
 
