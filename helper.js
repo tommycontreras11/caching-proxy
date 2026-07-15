@@ -2,6 +2,7 @@ import express from "express";
 
 const app = express();
 let siteOrigin = "";
+let cached = new Map([]);
 
 const inputRules = new Map([
   [
@@ -25,6 +26,32 @@ const inputRules = new Map([
 const getInputById = (id) => inputRules.get(id);
 
 const isAProperty = (property) => property?.startsWith("--");
+
+const isResourceCached = (url, id) => {
+  const resource = cached.get(url);
+
+  if (!resource || !resource.some((r) => r.id == id)) return false;
+
+  return true;
+};
+
+const saveToCache = (url, resource, data) => {
+  const cache = cached.get(url);
+
+  if (cache) {
+    cache.push({
+      id: resource,
+      data,
+    });
+  } else {
+    cached.set(url, [
+      {
+        id: resource,
+        data,
+      },
+    ]);
+  }
+};
 
 const inputValidation = (id, value) => {
   const input = getInputById(id);
@@ -97,11 +124,24 @@ app.get("/:origin", async (req, res) => {
 
     const { origin } = req.params;
 
-    const response = await fetch(`${siteOrigin}/${origin}`);
-    const data = await response.json();
+    let data = "";
+
+    if (!isResourceCached(siteOrigin, origin)) {
+      const response = await fetch(`${siteOrigin}/${origin}`);
+      data = await response.json();
+      if (!data) return;
+
+      saveToCache(siteOrigin, origin, data);
+    } else {
+      const resource = cached.get(siteOrigin);
+
+      data = resource.find((r) => r.id == origin).data;
+    }
 
     return res.status(200).json({ data });
   } catch (error) {
-    return res.status(404).json({ error: { message: "Sorry the requested resource was not found." } })
+    return res.status(404).json({
+      error: { message: "Sorry the requested resource was not found." },
+    });
   }
 });
