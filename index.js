@@ -1,3 +1,5 @@
+import { inputValidations } from "./helper.js"
+
 process.stdin.on("data", (data) => {
     const input = data.toString().trim().split(" ")
     const command = input[0]
@@ -6,7 +8,7 @@ process.stdin.on("data", (data) => {
 
     switch(command) {
         case "caching-proxy":
-            console.log("Caching proxy: ")
+            inputValidations(arg)
             break
         case "exit":
             process.exit()
