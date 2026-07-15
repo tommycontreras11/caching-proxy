@@ -125,6 +125,7 @@ app.get("/:origin", async (req, res) => {
     const { origin } = req.params;
 
     let data = "";
+    let isCached = false;
 
     if (!isResourceCached(siteOrigin, origin)) {
       const response = await fetch(`${siteOrigin}/${origin}`);
@@ -136,7 +137,10 @@ app.get("/:origin", async (req, res) => {
       const resource = cached.get(siteOrigin);
 
       data = resource.find((r) => r.id == origin).data;
+      isCached = true;
     }
+
+    res.setHeader("X-Cache", isCached ? "HIT" : "MISS");
 
     return res.status(200).json({ data });
   } catch (error) {
