@@ -54,19 +54,6 @@ export const hasAllRequiredProperties = (arg) => {
   return true;
 };
 
-// const saveToCache = (url, data) => {
-//   const cache = cache.get(url);
-//   console.log("url: ", url);
-
-//   if (cache) {
-//     cache.push({
-//       data,
-//     });
-//     return;
-//   }
-//   cache.set(url, data);
-// };
-
 const inputValidation = (id, value) => {
   const input = getInputById(id);
 
@@ -112,7 +99,6 @@ export const inputValidations = (arg) => {
 };
 
 export const initServer = (port, origin) => {
-  console.log("ORIGIN: ", origin);
   originUrl = origin;
   app.listen(port, () =>
     console.log(`The server is listening on port ${port}`),
