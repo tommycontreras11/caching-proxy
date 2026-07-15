@@ -9,7 +9,6 @@ const inputRules = new Map([
     "--port",
     {
       type: "number",
-      isRequired: true,
       nonNegativeValue: true,
     },
   ],
@@ -17,7 +16,6 @@ const inputRules = new Map([
     "--origin",
     {
       type: "string",
-      isRequired: true,
       isNotANumber: true,
     },
   ],
@@ -27,9 +25,34 @@ const getInputById = (id) => inputRules.get(id);
 
 const isAProperty = (property) => property?.startsWith("--");
 
-export const removeAllCache = () => {
-    cached.clear()
-}
+export const removeAllCache = () => cached.clear();
+
+export const getPropertyAndValue = (arg, property) => {
+  const inputIndex = arg?.findIndex((a) => a == property);
+
+  return {
+    id: arg[inputIndex],
+    value: isAProperty(arg[inputIndex + 1]) ? null : arg[inputIndex + 1],
+  };
+};
+
+export const hasAllRequiredProperties = (arg) => {
+  let propertiesTotal = 0
+  let propertyMissing = ""
+
+  for(const input of arg) {
+    if(inputRules.has(input?.id)) {
+      propertiesTotal += 1
+    }
+  }
+
+  if(propertiesTotal != inputRules.size) {
+    console.error("Please you must specify all the properties and values.");
+    return false;
+  }
+
+  return true
+};
 
 const isResourceCached = (url, id) => {
   const resource = cached.get(url);
@@ -67,7 +90,7 @@ const inputValidation = (id, value) => {
     return true;
   }
 
-  if (input.isRequired && (!value || isAProperty(value))) {
+  if (!value) {
     console.error(`The id ${id} must have a value.`);
     return true;
   }
@@ -91,22 +114,14 @@ const inputValidation = (id, value) => {
 };
 
 export const inputValidations = (arg) => {
-  const properties = arg?.filter((arg) => arg.startsWith("--"));
-  const hasAllRequiredProperties = inputRules?.size == properties.length;
-
-  if (!arg.length || !hasAllRequiredProperties) {
-    console.error("Please you must specify all the properties and values.");
-    return false;
-  }
-
   let hasError = false;
 
-  for (let i = 0; i < properties.length; i++) {
+  for (let i = 0; i < arg.length; i++) {
     hasError = inputValidation(
-      i == 0 ? arg[i] : arg[i + 1],
-      i == 0 ? arg[i + 1] : arg[i + 2],
+      arg[i].id,
+      arg[i].value
     );
-    if (hasError) break;
+    if (hasError) return true
   }
 
   return hasError;

@@ -1,4 +1,4 @@
-import { inputValidations, initServer, removeAllCache } from "./helper.js"
+import { getPropertyAndValue, hasAllRequiredProperties, inputValidations, initServer, removeAllCache } from "./helper.js"
 
 process.stdin.on("data", (data) => {
     const input = data.toString().trim().split(" ")
@@ -14,7 +14,13 @@ process.stdin.on("data", (data) => {
                 return
             }
 
-            const hasError = inputValidations(arg)
+            const port = getPropertyAndValue(arg, "--port")
+            const origin = getPropertyAndValue(arg, "--origin")
+
+            const isInputCompleted = hasAllRequiredProperties([port, origin])
+            if(!isInputCompleted) return
+
+            const hasError = inputValidations([port, origin])
             if(hasError) return 
 
             initServer(arg[1], arg[3])
