@@ -1,8 +1,8 @@
 import express from "express";
 
 const app = express();
-let originalURL = "";
-let urlsCached = new Map([]);
+let originUrl = "";
+let cache = new Map([]);
 
 const inputRules = new Map([
   [
@@ -25,7 +25,7 @@ const getInputById = (id) => inputRules.get(id);
 
 const isAProperty = (property) => property?.startsWith("--");
 
-export const removeAllCache = () => urlsCached.clear();
+export const removeAllCache = () => cache.clear();
 
 export const getPropertyAndValue = (arg, property) => {
   const inputIndex = arg?.findIndex((a) => a == property);
@@ -54,22 +54,18 @@ export const hasAllRequiredProperties = (arg) => {
   return true;
 };
 
-const isResourceCached = (url) => {
-  return urlsCached.get(url) ? urlsCached.get(url) : false;
-};
+// const saveToCache = (url, data) => {
+//   const cache = cache.get(url);
+//   console.log("url: ", url);
 
-const saveToCache = (url, data) => {
-  const cache = urlsCached.get(url);
-  console.log("url: ", url)
-
-  if (cache) {
-    cache.push({
-      data,
-    });
-    return;
-  }
-  urlsCached.set(url, data);
-};
+//   if (cache) {
+//     cache.push({
+//       data,
+//     });
+//     return;
+//   }
+//   cache.set(url, data);
+// };
 
 const inputValidation = (id, value) => {
   const input = getInputById(id);
@@ -116,41 +112,42 @@ export const inputValidations = (arg) => {
 };
 
 export const initServer = (port, origin) => {
-  originalURL = origin;
+  console.log("ORIGIN: ", origin);
+  originUrl = origin;
   app.listen(port, () =>
     console.log(`The server is listening on port ${port}`),
   );
 };
 
-app.get("/:origin", async (req, res) => {
+app.use(async (req, res) => {
   try {
-    if (!originalURL)
+    if (!originUrl)
       return res
         .status(404)
         .json({ error: { message: "No original url defined." } });
 
-    const { origin } = req.params;
-
     let data = "";
+
+    const url = `${originUrl}${req.originalUrl}`;
     let isCached = false;
 
-    const url = `${originalURL}/${origin}`;
+    if (!cache.has(url)) {
+      const response = await fetch(url, {
+        method: req.method,
+        headers: req.headers,
+      });
+      res.status(response.status);
 
-    if (!isResourceCached(url)) {
-      const response = await fetch(`${url}`);
       data = await response.json();
-      if (!data) return;
-
-      saveToCache(url, data);
+      cache.set(url, data);
     } else {
-      data = urlsCached.get(url);
-      
+      data = cache.get(url);
       isCached = true;
     }
 
     res.setHeader("X-Cache", isCached ? "HIT" : "MISS");
 
-    return res.status(200).json({ data });
+    return res.json({ data });
   } catch (error) {
     return res.status(404).json({
       error: { message: "Sorry the requested resource was not found." },
