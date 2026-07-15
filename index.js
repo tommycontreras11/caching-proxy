@@ -1,4 +1,4 @@
-import { inputValidations } from "./helper.js"
+import { inputValidations, initServer } from "./helper.js"
 
 process.stdin.on("data", (data) => {
     const input = data.toString().trim().split(" ")
@@ -8,7 +8,10 @@ process.stdin.on("data", (data) => {
 
     switch(command) {
         case "caching-proxy":
-            inputValidations(arg)
+            const hasError = inputValidations(arg)
+            if(hasError) return 
+
+            initServer(arg[1], arg[3])
             break
         case "exit":
             process.exit()

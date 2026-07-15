@@ -1,3 +1,8 @@
+import express from "express";
+
+const app = express();
+let siteOrigin = "";
+
 const inputRules = new Map([
   [
     "--port",
@@ -12,7 +17,7 @@ const inputRules = new Map([
     {
       type: "string",
       isRequired: true,
-      isNotANumber: true
+      isNotANumber: true,
     },
   ],
 ]);
@@ -59,9 +64,7 @@ export const inputValidations = (arg) => {
   const hasAllRequiredProperties = inputRules?.size == properties.length;
 
   if (!arg.length || !hasAllRequiredProperties) {
-    console.error(
-      "Please you must specify all the properties and values.",
-    );
+    console.error("Please you must specify all the properties and values.");
     return false;
   }
 
@@ -77,3 +80,28 @@ export const inputValidations = (arg) => {
 
   return hasError;
 };
+
+export const initServer = (port, origin) => {
+  siteOrigin = origin;
+  app.listen(port, () =>
+    console.log(`The server is listening on port ${port}`),
+  );
+};
+
+app.get("/:origin", async (req, res) => {
+  try {
+    if (!siteOrigin)
+      return res
+        .status(404)
+        .json({ error: { message: "No site origin defined." } });
+
+    const { origin } = req.params;
+
+    const response = await fetch(`${siteOrigin}/${origin}`);
+    const data = await response.json();
+
+    return res.status(200).json({ data });
+  } catch (error) {
+    return res.status(404).json({ error: { message: "Sorry the requested resource was not found." } })
+  }
+});
