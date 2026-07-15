@@ -12,6 +12,7 @@ const inputRules = new Map([
     {
       type: "string",
       isRequired: true,
+      isNotANumber: true
     },
   ],
 ]);
@@ -39,6 +40,13 @@ const inputValidation = (id, value) => {
     const inputValue = Number(value);
     if (input.nonNegativeValue && inputValue < 0) {
       console.error(`The id ${id} must be a positive number.`);
+      return true;
+    }
+  }
+
+  if (input.type == "string") {
+    if (input.isNotANumber && !isNaN(value)) {
+      console.error(`The id ${id} must be a string.`);
       return true;
     }
   }
