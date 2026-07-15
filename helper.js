@@ -1,8 +1,8 @@
 import express from "express";
 
 const app = express();
-let siteOrigin = "";
-let cached = new Map([]);
+let originalURL = "";
+let urlsCached = new Map([]);
 
 const inputRules = new Map([
   [
@@ -25,7 +25,7 @@ const getInputById = (id) => inputRules.get(id);
 
 const isAProperty = (property) => property?.startsWith("--");
 
-export const removeAllCache = () => cached.clear();
+export const removeAllCache = () => urlsCached.clear();
 
 export const getPropertyAndValue = (arg, property) => {
   const inputIndex = arg?.findIndex((a) => a == property);
@@ -37,47 +37,38 @@ export const getPropertyAndValue = (arg, property) => {
 };
 
 export const hasAllRequiredProperties = (arg) => {
-  let propertiesTotal = 0
-  let propertyMissing = ""
+  let propertiesTotal = 0;
+  let propertyMissing = "";
 
-  for(const input of arg) {
-    if(inputRules.has(input?.id)) {
-      propertiesTotal += 1
+  for (const input of arg) {
+    if (inputRules.has(input?.id)) {
+      propertiesTotal += 1;
     }
   }
 
-  if(propertiesTotal != inputRules.size) {
+  if (propertiesTotal != inputRules.size) {
     console.error("Please you must specify all the properties and values.");
     return false;
   }
 
-  return true
-};
-
-const isResourceCached = (url, id) => {
-  const resource = cached.get(url);
-
-  if (!resource || !resource.some((r) => r.id == id)) return false;
-
   return true;
 };
 
-const saveToCache = (url, resource, data) => {
-  const cache = cached.get(url);
+const isResourceCached = (url) => {
+  return urlsCached.get(url) ? urlsCached.get(url) : false;
+};
+
+const saveToCache = (url, data) => {
+  const cache = urlsCached.get(url);
+  console.log("url: ", url)
 
   if (cache) {
     cache.push({
-      id: resource,
       data,
     });
-  } else {
-    cached.set(url, [
-      {
-        id: resource,
-        data,
-      },
-    ]);
+    return;
   }
+  urlsCached.set(url, data);
 };
 
 const inputValidation = (id, value) => {
@@ -117,18 +108,15 @@ export const inputValidations = (arg) => {
   let hasError = false;
 
   for (let i = 0; i < arg.length; i++) {
-    hasError = inputValidation(
-      arg[i].id,
-      arg[i].value
-    );
-    if (hasError) return true
+    hasError = inputValidation(arg[i].id, arg[i].value);
+    if (hasError) return true;
   }
 
   return hasError;
 };
 
 export const initServer = (port, origin) => {
-  siteOrigin = origin;
+  originalURL = origin;
   app.listen(port, () =>
     console.log(`The server is listening on port ${port}`),
   );
@@ -136,26 +124,27 @@ export const initServer = (port, origin) => {
 
 app.get("/:origin", async (req, res) => {
   try {
-    if (!siteOrigin)
+    if (!originalURL)
       return res
         .status(404)
-        .json({ error: { message: "No site origin defined." } });
+        .json({ error: { message: "No original url defined." } });
 
     const { origin } = req.params;
 
     let data = "";
     let isCached = false;
 
-    if (!isResourceCached(siteOrigin, origin)) {
-      const response = await fetch(`${siteOrigin}/${origin}`);
+    const url = `${originalURL}/${origin}`;
+
+    if (!isResourceCached(url)) {
+      const response = await fetch(`${url}`);
       data = await response.json();
       if (!data) return;
 
-      saveToCache(siteOrigin, origin, data);
+      saveToCache(url, data);
     } else {
-      const resource = cached.get(siteOrigin);
-
-      data = resource.find((r) => r.id == origin).data;
+      data = urlsCached.get(url);
+      
       isCached = true;
     }
 
