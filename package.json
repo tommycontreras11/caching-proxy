@@ -1,7 +1,7 @@
 {
   "name": "caching-proxy",
   "version": "1.0.0",
-  "description": "",
+  "description": "A CLI caching proxy server built with Node.js and Express.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -12,9 +12,17 @@
     "type": "git",
     "url": "git+https://github.com/tommycontreras11/caching-proxy.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "proxy",
+    "cache",
+    "http",
+    "express",
+    "nodejs",
+    "cli",
+    "roadmapsh"
+  ],
+  "author": "Tommy Grullon Contreras",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/tommycontreras11/caching-proxy/issues"
   },
