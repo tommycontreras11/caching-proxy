@@ -19,7 +19,9 @@
   },
   "homepage": "https://github.com/tommycontreras11/caching-proxy#readme",
   "devDependencies": {
-    "express": "^5.2.1",
     "nodemon": "^3.1.14"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }
