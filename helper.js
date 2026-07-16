@@ -1,8 +1,9 @@
 import express from "express";
 
 const app = express();
+
 let originUrl = "";
-let cache = new Map();
+const cache = new Map();
 
 const inputRules = new Map([
   [
@@ -27,6 +28,16 @@ const isAProperty = (property) => property?.startsWith("--");
 
 export const removeAllCache = () => cache.clear();
 
+export const getCommandAndArgsFromInput = (data) => {
+  const input = data.toString().trim().split(" ");
+  const command = input[0];
+
+  return {
+    command,
+    arg: input.slice(1),
+  };
+};
+
 export const getPropertyAndValue = (arg, property) => {
   const inputIndex = arg?.findIndex((a) => a == property);
 
@@ -38,7 +49,6 @@ export const getPropertyAndValue = (arg, property) => {
 
 export const hasAllRequiredProperties = (arg) => {
   let propertiesTotal = 0;
-  let propertyMissing = "";
 
   for (const input of arg) {
     if (inputRules.has(input?.id)) {
@@ -71,6 +81,11 @@ const inputValidation = (id, value) => {
 
   if (input.type == "number") {
     const inputValue = Number(value);
+    if (isNaN(inputValue)) {
+      console.error(`The id ${id} must be a number.`);
+      return true;
+    }
+
     if (input.nonNegativeValue && inputValue < 0) {
       console.error(`The id ${id} must be a positive number.`);
       return true;
@@ -105,34 +120,44 @@ export const initServer = (port, origin) => {
   );
 };
 
+const fetchFromOrigin = async (url, method) => {
+  const response = await fetch(url, {
+    method,
+  });
+
+  return {
+    data: await response.json(),
+    status: response.status,
+  };
+};
+
+const getFromCache = (url) => {
+  return cache.get(url);
+};
+
+const saveToCache = (url, data) => {
+  cache.set(url, {
+    data: data.data,
+    status: data.status,
+  });
+};
+
 app.use(async (req, res) => {
   try {
-    if (!originUrl)
-      return res
-        .status(404)
-        .json({ error: { message: "No original url defined." } });
-
-    let data = "";
-
     const url = `${originUrl}${req.originalUrl}`;
-    let isCached = cache.has(url);
+    const cached = getFromCache(url);
 
-    if (!isCached) {
-      const response = await fetch(url, {
-        method: req.method
-      });
-      res.status(response.status);
+    res.setHeader("X-Cache", cached ? "HIT" : "MISS");
 
-      data = await response.json();
-      cache.set(url, data);
-    } else {
-      data = cache.get(url);
-      isCached = true;
+    if (!cached) {
+      const response = await fetchFromOrigin(url, req.method);
+      saveToCache(url, response);
+      return res.status(response.status).json(response.data);
     }
 
-    res.setHeader("X-Cache", isCached ? "HIT" : "MISS");
+    const dataFromCache = getFromCache(url);
 
-    return res.json(data);
+    return res.status(dataFromCache.status).json(dataFromCache.data);
   } catch (error) {
     return res.status(500).json({
       error: { message: "Unable to fetch resource." },

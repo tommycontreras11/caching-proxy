@@ -1,33 +1,36 @@
-import { getPropertyAndValue, hasAllRequiredProperties, inputValidations, initServer, removeAllCache } from "./helper.js"
+import {
+  getCommandAndArgsFromInput,
+  getPropertyAndValue,
+  hasAllRequiredProperties,
+  inputValidations,
+  initServer,
+  removeAllCache,
+} from "./helper.js";
 
 process.stdin.on("data", (data) => {
-    const input = data.toString().trim().split(" ")
-    const command = input[0]
+  const input = getCommandAndArgsFromInput(data);
 
-    const arg = input.slice(1)
+  switch (input.command) {
+    case "caching-proxy":
+      if (input.arg?.includes("--clear-cache")) {
+        removeAllCache();
+        return;
+      }
 
-    switch(command) {
-        case "caching-proxy":
-            const isArgumentToCleanCache = arg?.includes("--clear-cache")
-            if(isArgumentToCleanCache) {
-                removeAllCache()
-                return
-            }
+      const port = getPropertyAndValue(input.arg, "--port");
+      const origin = getPropertyAndValue(input.arg, "--origin");
 
-            const port = getPropertyAndValue(arg, "--port")
-            const origin = getPropertyAndValue(arg, "--origin")
+      const isInputCompleted = hasAllRequiredProperties([port, origin]);
+      if (!isInputCompleted) return;
 
-            const isInputCompleted = hasAllRequiredProperties([port, origin])
-            if(!isInputCompleted) return
+      const hasError = inputValidations([port, origin]);
+      if (hasError) return;
 
-            const hasError = inputValidations([port, origin])
-            if(hasError) return 
-
-            initServer(port.value, origin.value)
-            break
-        case "exit":
-            process.exit()
-        default:
-            console.log("Command not valid.")
-    }
-})
+      initServer(port.value, origin.value);
+      break;
+    case "exit":
+      process.exit();
+    default:
+      console.log("Command not valid.");
+  }
+});
