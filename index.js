@@ -23,7 +23,7 @@ process.stdin.on("data", (data) => {
             const hasError = inputValidations([port, origin])
             if(hasError) return 
 
-            initServer(arg[1], arg[3])
+            initServer(port.value, origin.value)
             break
         case "exit":
             process.exit()

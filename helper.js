@@ -2,7 +2,7 @@ import express from "express";
 
 const app = express();
 let originUrl = "";
-let cache = new Map([]);
+let cache = new Map();
 
 const inputRules = new Map([
   [
@@ -31,7 +31,7 @@ export const getPropertyAndValue = (arg, property) => {
   const inputIndex = arg?.findIndex((a) => a == property);
 
   return {
-    id: arg[inputIndex],
+    id: arg[inputIndex] ?? null,
     value: isAProperty(arg[inputIndex + 1]) ? null : arg[inputIndex + 1],
   };
 };
@@ -115,12 +115,11 @@ app.use(async (req, res) => {
     let data = "";
 
     const url = `${originUrl}${req.originalUrl}`;
-    let isCached = false;
+    let isCached = cache.has(url);
 
-    if (!cache.has(url)) {
+    if (!isCached) {
       const response = await fetch(url, {
-        method: req.method,
-        headers: req.headers,
+        method: req.method
       });
       res.status(response.status);
 
@@ -133,10 +132,10 @@ app.use(async (req, res) => {
 
     res.setHeader("X-Cache", isCached ? "HIT" : "MISS");
 
-    return res.json({ data });
+    return res.json(data);
   } catch (error) {
-    return res.status(404).json({
-      error: { message: "Sorry the requested resource was not found." },
+    return res.status(500).json({
+      error: { message: "Unable to fetch resource." },
     });
   }
 });
